@@ -6,7 +6,7 @@
     <title>SKL Aethelon</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='10%25' y1='100%25' x2='90%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%2322c55e' /%3E%3Cstop offset='25%25' stop-color='%23eab308' /%3E%3Cstop offset='50%25' stop-color='%23ef4444' /%3E%3Cstop offset='75%25' stop-color='%23a855f7' /%3E%3Cstop offset='100%25' stop-color='%233b82f6' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M60 15 L105 105 H82 L72 82 H48 L38 105 H15 L60 15 Z M60 42 L52 65 H68 L60 42 Z' fill='url(%23g)' /%3E%3C/svg%3E" type="image/svg+xml" />
     
-    <!-- Libraries -->
+    <!-- 1. Load Libraries from CDN (No installation needed) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <!-- Google GenAI Configuration -->
+    <!-- 2. Configure Google GenAI SDK -->
     <script type="importmap">
       {
         "imports": {
@@ -24,12 +24,17 @@
       }
     </script>
 
+    <!-- 3. Global Styles -->
     <style>
-        body { background-color: #212121; color: #f3f4f6; font-family: 'Inter', sans-serif; }
-        /* Scrollbar Styles */
+        body { background-color: #212121; color: #f3f4f6; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #424242; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* Markdown Styles */
         .markdown-content pre { background: #1e1e1e; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid #333; margin: 1rem 0; }
         .markdown-content code { background: #2d2d2d; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.875em; color: #e0e0e0; }
         .markdown-content pre code { background: transparent; padding: 0; color: #ce9178; }
@@ -37,20 +42,24 @@
         .markdown-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
         .markdown-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
         .markdown-content a { color: #60a5fa; text-decoration: underline; }
-        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .markdown-content strong { font-weight: 700; color: #fff; }
+
+        /* Animations */
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
 <body>
-    <div id="root" class="h-screen w-full flex overflow-hidden"></div>
+    <div id="root" class="h-screen w-full flex"></div>
 
+    <!-- 4. The Application Logic -->
     <script type="text/babel" data-type="module">
         import { GoogleGenAI } from "@google/genai";
 
         // --- CONFIGURATION ---
         const APP_NAME = "SKL Aethelon";
         const CREATOR_NAME = "Shreeman Iyer";
-        const API_KEY = 'AIzaSyBt85OXq2WUhVTl0cq9OpSGK2TJSYwACno'; // API Key embedded directly
+        const API_KEY = 'AIzaSyBt85OXq2WUhVTl0cq9OpSGK2TJSYwACno'; 
         
         const AVAILABLE_MODELS = [
             { id: 'gemini-2.5-flash', name: 'Aethelon Flash', description: 'Fastest model for everyday tasks', capabilities: { image: false } },
@@ -60,10 +69,9 @@
             { id: 'gemini-2.5-flash-image', name: 'Aethelon Imagine', description: 'Generate AI images', capabilities: { image: true } }
         ];
 
-        // --- ICONS ---
-        const { Menu, ChevronDown, AlertCircle, Globe, BrainCircuit, Zap, Image: ImageIcon, MessageSquarePlus, PanelLeftClose, MoreHorizontal, User, ArrowUp, Paperclip, X } = window.lucide;
-
         // --- COMPONENTS ---
+        
+        // Logo Component
         const Logo = ({ className }) => (
             <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
                 <defs>
@@ -75,35 +83,41 @@
             </svg>
         );
 
-        const Sidebar = ({ isOpen, onClose, onNewChat, history, onSelectSession, currentSessionId }) => (
-            <>
-                <div className={`fixed inset-0 z-40 bg-black/60 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
-                <aside className={`fixed lg:relative z-50 h-full w-[260px] flex flex-col bg-[#171717] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                    <div className="p-3 flex justify-between">
-                        <button onClick={() => { onNewChat(); if(window.innerWidth < 1024) onClose(); }} className="flex-1 flex items-center px-3 py-2.5 rounded-lg hover:bg-[#212121] text-gray-200 text-sm font-medium border border-transparent hover:border-gray-700/50">
-                            <div className="w-6 h-6 rounded-full bg-[#2f2f2f] p-1 mr-2"><Logo className="w-full h-full" /></div><span>New chat</span>
-                        </button>
-                        <button onClick={onClose} className="lg:hidden ml-2 p-2 text-gray-400"><PanelLeftClose size={20} /></button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
-                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Recent</div>
-                        {history.map(s => (
-                            <button key={s.id} onClick={() => { onSelectSession(s.id); if(window.innerWidth < 1024) onClose(); }} className={`w-full text-left px-3 py-2.5 rounded-lg text-sm truncate mb-1 ${currentSessionId === s.id ? 'bg-[#212121] text-white' : 'text-gray-300 hover:bg-[#212121]'}`}>
-                                {s.title}
+        // Sidebar Component
+        const Sidebar = ({ isOpen, onClose, onNewChat, history, onSelectSession, currentSessionId }) => {
+            const { MessageSquarePlus, PanelLeftClose, User, MoreHorizontal } = window.lucide;
+            return (
+                <>
+                    <div className={`fixed inset-0 z-40 bg-black/60 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
+                    <aside className={`fixed lg:relative z-50 h-full w-[260px] flex flex-col bg-[#171717] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} border-r border-gray-800/50`}>
+                        <div className="p-3 flex justify-between">
+                            <button onClick={() => { onNewChat(); if(window.innerWidth < 1024) onClose(); }} className="flex-1 flex items-center px-3 py-2.5 rounded-lg hover:bg-[#212121] text-gray-200 text-sm font-medium border border-transparent hover:border-gray-700/50 transition-all group">
+                                <div className="w-6 h-6 rounded-full bg-[#2f2f2f] p-1 mr-2"><Logo className="w-full h-full" /></div>
+                                <span>New chat</span>
+                                <MessageSquarePlus size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity" />
                             </button>
-                        ))}
-                    </div>
-                    <div className="p-3 border-t border-gray-800/50">
-                        <div className="flex items-center gap-3 px-3 py-3 w-full text-sm text-gray-200 hover:bg-[#212121] rounded-lg">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white"><User size={16} /></div>
-                            <div className="flex flex-col"><span className="font-medium">{APP_NAME}</span><span className="text-xs text-gray-500">By {CREATOR_NAME}</span></div>
+                            <button onClick={onClose} className="lg:hidden ml-2 p-2 text-gray-400"><PanelLeftClose size={20} /></button>
                         </div>
-                    </div>
-                </aside>
-            </>
-        );
+                        <div className="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
+                            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">History</div>
+                            {history.map(s => (
+                                <button key={s.id} onClick={() => { onSelectSession(s.id); if(window.innerWidth < 1024) onClose(); }} className={`w-full text-left px-3 py-2.5 rounded-lg text-sm truncate mb-1 relative group ${currentSessionId === s.id ? 'bg-[#212121] text-white' : 'text-gray-300 hover:bg-[#212121]'}`}>
+                                    {s.title}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-3 border-t border-gray-800/50">
+                            <div className="flex items-center gap-3 px-3 py-3 w-full text-sm text-gray-200 hover:bg-[#212121] rounded-lg transition-colors">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white shadow-lg"><User size={16} /></div>
+                                <div className="flex flex-col"><span className="font-medium">{APP_NAME}</span><span className="text-xs text-gray-500">By {CREATOR_NAME}</span></div>
+                            </div>
+                        </div>
+                    </aside>
+                </>
+            );
+        };
 
-        // --- MAIN APP ---
+        // Main App Component
         const App = () => {
             const [sessions, setSessions] = React.useState([{ id: '1', title: 'New Chat', messages: [], modelId: 'gemini-2.5-flash' }]);
             const [currentSessionId, setCurrentSessionId] = React.useState('1');
@@ -115,17 +129,19 @@
 
             const messagesEndRef = React.useRef(null);
             const aiRef = React.useRef(new GoogleGenAI({ apiKey: API_KEY }));
+            const { Menu, ChevronDown, ArrowUp, Paperclip, Globe, BrainCircuit, Zap, Image: ImageIcon } = window.lucide;
 
             React.useEffect(() => { window.lucide.createIcons(); }, []);
             React.useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [sessions, currentSessionId, isLoading]);
 
-            const activeSession = sessions.find(s => s.id === currentSessionId);
+            const activeSession = sessions.find(s => s.id === currentSessionId) || sessions[0];
             const activeModel = AVAILABLE_MODELS.find(m => m.id === currentModelId);
 
             const createSession = () => {
                 const newId = Date.now().toString();
                 setSessions(prev => [{ id: newId, title: "New Chat", messages: [], modelId: currentModelId }, ...prev]);
                 setCurrentSessionId(newId);
+                setSidebarOpen(false);
             };
 
             const handleSend = async () => {
@@ -134,49 +150,65 @@
                 setInput("");
                 setIsLoading(true);
 
-                // 1. Update UI with User Message
+                // Add User Message
                 setSessions(prev => prev.map(s => s.id === currentSessionId ? {
                     ...s, 
-                    title: s.messages.length === 0 ? userText.slice(0,30) : s.title,
+                    title: s.messages.length === 0 ? userText.slice(0,30) + "..." : s.title,
                     messages: [...s.messages, { role: 'user', content: userText }]
                 } : s));
 
                 try {
                     let responseContent = "";
                     let generatedImage = null;
+                    let sources = [];
 
-                    // 2. Call Gemini API
+                    // --- Logic: Image Generation vs Text ---
                     if (activeModel.capabilities.image) {
-                        // Image Generation Mode
-                        const model = aiRef.current.getGenerativeModel({ model: activeModel.id });
-                        // Use generateContent with responseModalities for gemini-2.5-flash-image
+                        // Use gemini-2.5-flash-image with Modality
+                        const model = aiRef.current.getGenerativeModel({ model: "gemini-2.5-flash-image" });
                         const result = await model.generateContent({
                             contents: [{ role: 'user', parts: [{ text: userText }] }],
                             generationConfig: { responseModalities: ["IMAGE"] }
                         });
-                        const part = result.response.candidates[0].content.parts[0];
-                        if (part.inlineData) generatedImage = part.inlineData.data;
-                        responseContent = `Generated image for: "${userText}"`;
+                        const part = result.response.candidates?.[0]?.content?.parts?.[0];
+                        if (part && part.inlineData) {
+                            generatedImage = part.inlineData.data;
+                            responseContent = `Generated image for: "${userText}"`;
+                        } else {
+                            responseContent = "Failed to generate image. Please try a different prompt.";
+                        }
                     } else {
-                        // Text Mode
+                        // Standard Text/Search/Thinking
                         const tools = activeModel.capabilities.search ? [{ googleSearch: {} }] : [];
+                        const thinkingConfig = activeModel.capabilities.thinking ? { thinkingBudget: 1024 } : undefined;
+                        
                         const model = aiRef.current.getGenerativeModel({ 
                             model: activeModel.id,
-                            systemInstruction: `You are ${APP_NAME} created by ${CREATOR_NAME}. SKL Team: Shreyan, Veer, Aarush, Shaurya, Shivaansh.`,
+                            systemInstruction: `You are ${APP_NAME}, a professional AI assistant developed by SKL. SKL is co-owned by Shreeman Iyer (Creator of Aethelon) and Yatharth Chauhan. The team includes Shreyan Arora, Veer Srivastava, Aarush Bhardwaj, Shaurya Sinha, and Shivaansh Chawla. Use Markdown.`,
                             tools: tools
                         });
                         
                         const chat = model.startChat({
                             history: activeSession.messages.map(m => ({ role: m.role, parts: [{ text: m.content }] }))
                         });
+
+                        // We use single send for simplicity in single-file mode, but we handle grounding
                         const result = await chat.sendMessage(userText);
                         responseContent = result.response.text();
+                        
+                        // Extract Search Sources
+                        const groundingMetadata = result.response.candidates?.[0]?.groundingMetadata;
+                        if (groundingMetadata?.groundingChunks) {
+                            sources = groundingMetadata.groundingChunks
+                                .map(c => c.web ? { title: c.web.title, uri: c.web.uri } : null)
+                                .filter(Boolean);
+                        }
                     }
 
-                    // 3. Update UI with Model Message
+                    // Add Model Message
                     setSessions(prev => prev.map(s => s.id === currentSessionId ? {
                         ...s,
-                        messages: [...s.messages, { role: 'user', content: userText }, { role: 'model', content: responseContent, generatedImage }]
+                        messages: [...s.messages, { role: 'user', content: userText }, { role: 'model', content: responseContent, generatedImage, sources }]
                     } : s));
 
                 } catch (error) {
@@ -190,25 +222,36 @@
                 }
             };
 
+            // Helper to get icon
+            const getModelIcon = (id) => {
+                if (id.includes('thinking')) return <BrainCircuit size={18} className="text-purple-400" />;
+                if (id.includes('search')) return <Globe size={18} className="text-blue-400" />;
+                if (id.includes('image')) return <ImageIcon size={18} className="text-pink-400" />;
+                return <Zap size={18} className="text-green-400" />;
+            };
+
             return (
                 <>
                     <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onNewChat={createSession} history={sessions} onSelectSession={setCurrentSessionId} currentSessionId={currentSessionId} />
                     
                     <div className="flex-1 flex flex-col bg-[#212121] relative">
                         {/* Header */}
-                        <div className="h-12 flex items-center px-4 border-b border-gray-800/50 justify-between">
+                        <div className="h-14 flex items-center px-4 border-b border-gray-800/50 justify-between flex-shrink-0">
                             <div className="flex items-center gap-2">
-                                <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-400"><Menu size={20} /></button>
+                                <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-400 p-2 hover:bg-[#2f2f2f] rounded-lg"><Menu size={20} /></button>
                                 <div className="relative">
-                                    <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-gray-200 font-medium hover:bg-[#2f2f2f] px-3 py-1.5 rounded-lg">
-                                        {activeModel.name} <ChevronDown size={14} />
+                                    <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-gray-200 font-medium hover:bg-[#2f2f2f] px-3 py-1.5 rounded-lg transition-colors">
+                                        <span className="text-lg">{activeModel.name}</span> <ChevronDown size={16} className="text-gray-500" />
                                     </button>
                                     {menuOpen && (
-                                        <div className="absolute top-10 left-0 w-64 bg-[#2f2f2f] border border-gray-700 rounded-xl p-1 z-50 shadow-xl">
+                                        <div className="absolute top-12 left-0 w-72 bg-[#2f2f2f] border border-gray-700 rounded-xl p-1 z-50 shadow-2xl">
                                             {AVAILABLE_MODELS.map(m => (
-                                                <button key={m.id} onClick={() => { setCurrentModelId(m.id); setMenuOpen(false); }} className={`w-full text-left p-2 rounded-lg text-sm text-gray-200 hover:bg-[#424242] ${currentModelId === m.id ? 'bg-[#424242]' : ''}`}>
-                                                    <div className="font-bold">{m.name}</div>
-                                                    <div className="text-xs text-gray-400">{m.description}</div>
+                                                <button key={m.id} onClick={() => { setCurrentModelId(m.id); setMenuOpen(false); }} className={`w-full text-left p-3 rounded-lg text-sm text-gray-200 hover:bg-[#424242] flex items-center gap-3 ${currentModelId === m.id ? 'bg-[#424242]' : ''}`}>
+                                                    <div className="mt-0.5">{getModelIcon(m.id)}</div>
+                                                    <div>
+                                                        <div className="font-semibold">{m.name}</div>
+                                                        <div className="text-xs text-gray-400">{m.description}</div>
+                                                    </div>
                                                 </button>
                                             ))}
                                         </div>
@@ -220,24 +263,41 @@
                         {/* Chat Area */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
                             {activeSession.messages.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 mb-6"><Logo className="w-full h-full" /></div>
+                                <div className="h-full flex flex-col items-center justify-center text-center animate-fade-in">
+                                    <div className="w-20 h-20 mb-6"><Logo className="w-full h-full" /></div>
                                     <h2 className="text-2xl font-bold text-white mb-2">I'm {APP_NAME}</h2>
-                                    <p className="text-gray-400">How can I help you today?</p>
+                                    <p className="text-gray-400 mb-8">How can I help you today?</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl px-4">
+                                        {["Explain quantum entanglement", "Create a cyberpunk city image", "Who is Shreeman Iyer?", "Write python code for snake"].map((txt, i) => (
+                                            <button key={i} onClick={() => { setInput(txt); }} className="p-4 border border-gray-700/50 rounded-xl text-left hover:bg-[#2f2f2f] transition-colors text-sm text-gray-300 shadow-sm">
+                                                {txt}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="max-w-3xl mx-auto space-y-6 pb-4">
                                     {activeSession.messages.map((msg, idx) => (
                                         <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-[#2f2f2f] p-1 shrink-0"><Logo className="w-full h-full" /></div>}
-                                            <div className={`max-w-[85%] px-5 py-3 rounded-2xl ${msg.role === 'user' ? 'bg-[#303030] text-white' : 'text-gray-100'}`}>
+                                            {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-[#2f2f2f] p-1 shrink-0 border border-gray-700"><Logo className="w-full h-full" /></div>}
+                                            <div className={`max-w-[90%] lg:max-w-[85%] px-5 py-3 rounded-2xl shadow-md ${msg.role === 'user' ? 'bg-[#303030] text-white' : 'text-gray-100'}`}>
                                                 {msg.generatedImage ? (
                                                     <div>
-                                                        <img src={`data:image/jpeg;base64,${msg.generatedImage}`} className="rounded-lg shadow-lg mb-2 border border-gray-700" />
+                                                        <img src={`data:image/jpeg;base64,${msg.generatedImage}`} className="rounded-xl shadow-lg mb-2 border border-gray-700" />
                                                         <p className="text-sm italic text-gray-400">{msg.content}</p>
                                                     </div>
                                                 ) : (
                                                     <div className="markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
+                                                )}
+                                                {/* Sources */}
+                                                {msg.sources && msg.sources.length > 0 && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-700/50 flex flex-wrap gap-2">
+                                                        {msg.sources.map((src, i) => (
+                                                            <a key={i} href={src.uri} target="_blank" className="flex items-center gap-1 bg-[#2f2f2f] hover:bg-[#424242] px-2 py-1 rounded-md text-xs text-blue-400 transition-colors">
+                                                                <Globe size={10} /> <span className="truncate max-w-[150px]">{src.title}</span>
+                                                            </a>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -245,7 +305,9 @@
                                     {isLoading && (
                                         <div className="flex gap-4">
                                             <div className="w-8 h-8 rounded-full bg-[#2f2f2f] p-1"><Logo className="w-full h-full animate-pulse-slow" /></div>
-                                            <div className="text-gray-400 text-sm flex items-center animate-pulse">Generating content...</div>
+                                            <div className="text-gray-400 text-sm flex items-center animate-pulse font-mono">
+                                                {activeModel.capabilities.image ? 'Generating image...' : 'Thinking...'}
+                                            </div>
                                         </div>
                                     )}
                                     <div ref={messagesEndRef} />
@@ -255,21 +317,21 @@
 
                         {/* Input */}
                         <div className="p-4 bg-[#212121]">
-                            <div className="max-w-3xl mx-auto relative bg-[#2f2f2f] rounded-3xl flex items-end p-2">
-                                <button className="p-2 text-gray-400 hover:text-white"><Paperclip size={20} /></button>
+                            <div className="max-w-3xl mx-auto relative bg-[#2f2f2f] rounded-[26px] flex items-end p-2 shadow-lg border border-gray-700/30">
+                                <button className="p-2 text-gray-400 hover:text-white transition-colors"><Paperclip size={20} /></button>
                                 <textarea 
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
                                     placeholder={`Message ${APP_NAME}...`}
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-white resize-none max-h-32 py-2 px-2 focus:outline-none"
+                                    className="flex-1 bg-transparent border-none focus:ring-0 text-white resize-none max-h-32 py-2 px-2 focus:outline-none custom-scrollbar leading-6"
                                     rows={1}
                                 />
-                                <button onClick={handleSend} disabled={isLoading || !input.trim()} className={`p-2 rounded-full transition-colors ${input.trim() && !isLoading ? 'bg-white text-black' : 'bg-gray-600 text-gray-400'}`}>
-                                    <ArrowUp size={20} />
+                                <button onClick={handleSend} disabled={isLoading || !input.trim()} className={`p-2 rounded-full transition-all duration-200 ${input.trim() && !isLoading ? 'bg-white text-black hover:bg-gray-200' : 'bg-[#424242] text-[#212121]'}`}>
+                                    <ArrowUp size={20} strokeWidth={3} />
                                 </button>
                             </div>
-                            <div className="text-center mt-2 text-xs text-gray-500">{APP_NAME} can make mistakes.</div>
+                            <div className="text-center mt-2 text-[10px] text-gray-500 uppercase tracking-widest">{APP_NAME} can make mistakes.</div>
                         </div>
                     </div>
                 </>
